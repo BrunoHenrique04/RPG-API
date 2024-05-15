@@ -4676,11 +4676,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\2DS -EVB\\DS\\RPG---API-\\RpgApi.csproj",
+      "projectUniqueName": "D:\\2D-BEV\\RPG---API-\\RpgApi.csproj",
       "projectName": "RpgApi",
-      "projectPath": "D:\\2DS -EVB\\DS\\RPG---API-\\RpgApi.csproj",
+      "projectPath": "D:\\2D-BEV\\RPG---API-\\RpgApi.csproj",
       "packagesPath": "C:\\Users\\etechas\\.nuget\\packages\\",
-      "outputPath": "D:\\2DS -EVB\\DS\\RPG---API-\\obj\\",
+      "outputPath": "D:\\2D-BEV\\RPG---API-\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

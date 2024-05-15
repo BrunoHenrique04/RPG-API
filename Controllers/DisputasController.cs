@@ -23,7 +23,7 @@ namespace RpgApi.Controllers
         public DisputasController(DataContext context)
         {
             _context = context;
-        } 
+        }
 
         [HttpPost("Arma")]
 
@@ -32,7 +32,7 @@ namespace RpgApi.Controllers
 
             try
             {
-                Personagem? atacante  = await _context.TB_PERSONAGENS.Include(p => p.Arma).FirstOrDefaultAsync(p => p.Id == x.Id);
+                Personagem? atacante = await _context.TB_PERSONAGENS.Include(p => p.Arma).FirstOrDefaultAsync(p => p.Id == x.Id);
 
                 Personagem? oponente = await _context.TB_PERSONAGENS.FirstOrDefaultAsync(p => p.Id == x.OponenteId);
 
@@ -41,10 +41,10 @@ namespace RpgApi.Controllers
                 dano = dano - new Random().Next(oponente.Defesa);
 
                 if (dano > 0)
-                 oponente.PontosVida = oponente.PontosVida - (int)dano;
-                if(oponente.PontosVida < 0)
-                  x.Narracao = $"{oponente.Nome} foi derrotado !";
-                
+                    oponente.PontosVida = oponente.PontosVida - (int)dano;
+                if (oponente.PontosVida < 0)
+                    x.Narracao = $"{oponente.Nome} foi derrotado !";
+
                 _context.TB_PERSONAGENS.Update(oponente);
                 await _context.SaveChangesAsync();
 
@@ -55,14 +55,14 @@ namespace RpgApi.Controllers
                 dados.AppendFormat(" Pontos de vida  de atacante: {0}.", atacante.PontosVida);
                 dados.AppendFormat(" Pontos de do Oponente: {0}", oponente.Nome);
                 dados.AppendFormat(" Arma Utilizado: {0}", atacante.Arma.Nome);
-                dados.AppendFormat(" Dano {0}",dano);
+                dados.AppendFormat(" Dano {0}", dano);
 
                 x.Narracao += dano.ToString();
                 x.DataDisputa = DateTime.Now;
                 _context.TB_DISPUTA.Add(x);
                 _context.SaveChanges();
-                
-                
+
+
                 return Ok(x);
             }
             catch (System.Exception ex)
@@ -79,7 +79,7 @@ namespace RpgApi.Controllers
         {
             try
             {
-                
+
                 Personagem atacante = await _context.TB_PERSONAGENS.Include(p => p.PersonagemHabilidades).ThenInclude(ph => ph.Habilidade).FirstOrDefaultAsync(p => p.Id == x.AtacanteId);
 
                 Personagem oponente = await _context.TB_PERSONAGENS.FirstOrDefaultAsync(p => p.Id == x.AtacanteId);
@@ -88,7 +88,7 @@ namespace RpgApi.Controllers
 
 
 
-                
+
                 return Ok(x);
             }
             catch (System.Exception ex)
@@ -98,7 +98,7 @@ namespace RpgApi.Controllers
         }
 
 
-    [HttpPost("DisuputaEmGrupo")]
+            [HttpPost("DisuputaEmGrupo")]
 
     public async Task<IActionResult> DisputaEmGrupo(Disputa x)
 
@@ -107,14 +107,138 @@ namespace RpgApi.Controllers
         {
             x.Resultado = new List<string>();
 
-            List<Personagem> personagens = await _context.TB_PERSONAGENS.Include(p => p.Arma).Include(p => p.PersonagemHabilidades).ThenInclude(px => px.Habilidade).Where(p => p.ListaPersonagens.Contains(personagens.Id).ToListAsyc();
+            List<Personagem> personagens = await _context.TB_PERSONAGENS.Include(p => p.Arma).Include(p => p.PersonagemHabilidades).ThenInclude(px => px.Habilidade).Where(p => x.ListaIdPersonagens.Contains(p.Id)).ToListAsync();
 
-            int qtd 
+            int qtdPersonagemVivos = personagens.FindAll(p => p.PontosVida > 0).Count;
+
+            while(qtdPersonagemVivos > 1)
+            {
+                    List<Personagem> atacantes = personagens.Where(p =>  p.PontosVida > 0).ToList();
+                    Personagem atacante = atacantes[new Random().Next(atacantes.Count)];
+                    x.AtacanteId = atacante.Id;
+
+                    List<Personagem> oponentes = personagens.Where(p => p.PontosVida > 0).ToList();
+                    Personagem oponente = oponentes[new Random().Next(oponentes.Count)];
+                    x.OponenteId = oponente.Id;
+
+                    int dano = 0;
+                    string ataqueUsado = string.Empty;
+                    string resultado = string.Empty;
+
+                    bool ataqueUsaArma = (new Random().Next(1) == 0);
+
+                    if(ataqueUsaArma && atacante.Arma != null)
+                    {
+
+                        dano = atacante.Arma.Dano + (new Random().Next(atacante.Forca));
+                        dano = dano - new Random().Next(oponente.Defesa);
+                        ataqueUsado = atacante.Arma.Nome;
+
+                        if (dano > 0)
+                            oponente.PontosVida = oponente.PontosVida - (int)dano;
+
+                        resultado = string.Format("{0} atacou {1} usado {2} com o dano {3}", atacante.Nome, oponente.Nome, ataqueUsado, dano);
+                        x.Narracao += resultado;
+                        x.Resultado.Add(resultado);
+
+
+                    }
+                    else if(atacante.PersonagemHabilidades.Count != 0)
+                    {
+                        
+                        int sorteioHabilidadeId = new Random().Next(atacante.PersonagemHabilidades.Count);
+                        Habilidade habilidadeEscolhida = atacante.PersonagemHabilidades[sorteioHabilidadeId].Habilidade;
+                        ataqueUsado = habilidadeEscolhida.Nome;
+
+                        dano = habilidadeEscolhida.Dano + (new Random().Next(atacante.Inteligencia));
+                        dano = dano - new Random().Next(oponente.Defesa);
+
+                        if (dano > 0)
+                            oponente.PontosVida = oponente.PontosVida - (int)dano;
+
+                        resultado = string.Format("{0} atacou {1} usado {2} com o dano {3}", atacante.Nome, oponente.Nome, ataqueUsado, dano);
+                        x.Narracao += resultado;
+                        x.Resultado.Add(resultado);
+                        
+                        
+
+                    }
+
+                    if(!string.IsNullOrEmpty(ataqueUsado) )
+                    {
+                        atacante.Vitorias++;
+                        atacante.Derrotas++;
+                        atacante.Disputas++;
+
+                        x.Id = 0;
+                        x.DataDisputa = DateTime.Now;
+                        _context.TB_DISPUTA.Add(x);
+                        await _context.SaveChangesAsync();
+
+                    }
+
+                    qtdPersonagemVivos = personagens.FindAll(p => p.PontosVida > 0).Count;
+
+                    if (qtdPersonagemVivos == 1)
+                    {
+                        string resultadoFinal = $"{atacante.Nome.ToUpper()} é CAMPEÃO com {atacante.PontosVida} pontos de vidarestantes!";
+
+                        x.Narracao += resultadoFinal;
+                        x.Resultado.Add(resultadoFinal);
+
+                        break;
+                    }
+
+            }
+
+            _context.TB_PERSONAGENS.UpdateRange(personagens);
+            await _context.SaveChangesAsync();
+
+            return Ok(x);
+            
+
+        }
+
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+
+
+    }
+    }
+
+
+
+
+        [HttpDelete("ApagarDisputas")]
+        public async Task<IActionResult> DeleteAsync()
+        {
+            try
+            {
+                List<Disputa> disputas = await _context.TB_DISPUTA.ToListAsync(); _context.TB_DISPUTA.RemoveRange(disputas);
+                await _context.SaveChangesAsync();
+                return Ok("Disputas apagadas");
+            }
+            catch (System.Exception ex)
+            { return BadRequest(ex.Message); }
+        }
+
+        [HttpGet("Listar")]
+        public async Task<IActionResult> ListarAsync()
+        {
+            try
+            {
+                List<Disputa> disputas = await _context.TB_DISPUTA.ToListAsync();
+                return Ok(disputas);
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 
+    }
 
 
-    }
-    }
 }
